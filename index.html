@@ -245,6 +245,7 @@ const HITBOX = [   // tools/hitbox.cjs 로 측정 (p 주먹끝, k 발끝, f 몸�
   { p: 73, k: 86, f: 16, h: 142 },   // 17
   { p: 63, k: 77, f: 17, h: 113 },   // 18 노짱
   { p: 56, k: 69, f: 24, h: 102 },   // 19 걸라
+  { p: 64, k: 79, f: 17, h: 115 },   // 20 simdragon
 ];
 const HITBOX_SLIM = { p: 61, k: 74, f: 17, h: 112 };
 const ATK = { pBase: 8, pStep: 3, kickMul: 0.5, pReach: 38, kReach: 60, pBonus: 8 };   // pBonus: 주먹 사거리 추가
@@ -267,8 +268,10 @@ const BAL = {   // v4 밸런스 패치: 체력 2배 (경기 시간 증가) + AI 
   14: { hp: 234, furDot: 0.5, sneezeP: 0.15, sneezeT: 30, shingT: 600, shingDmg: 1, chestT: 300, chestDR: 0.5, antN: 100, antWave: 25, antWaveT: 30, antSpd: 12, antHp: 2, antDmg: 1, antBite: 60, antLife: 117 },
   16: { hp: 150, ironAt: 0.2, ironT: 300, ironRange: 2, pimoLife: 420, pimoRoot: 240, pimoMax: 2, mantisT: 240, mantis: 1.5, clockT: 300, clockSpd: 1.75, clockStun: 60, clockSec: 455, phonePct: 0.2, phoneT: 600 },
   15: { hp: 308, eun: 0.1, mallangT: 180, mallangRefl: 0.5, ballMin: 3, ballMax: 30, fifaT: 1200, fifaLS: 0.5, fifaAtk: 0.1, fifaMul: 2, bombDmg: 50, bombFuse: 60, bombR: 85 },
-  18: { hp: 205, excPer: 8, excMax: 10, excAtk: 0.03, excHeal: 0.1, gakDmg: 13, gakReach: 30, gakStun: 24, mugDmg: 10, mugStun: 36, singT: 180, singSlow: 240, singRange: 220, singExc: 3, yokWind: 36, yokBase: 20, yokPer: 3, yokStun: 90, yokRange: 150 },
+  18: { hp: 250, excPer: 8, excMax: 10, excAtk: 0.01, excDR: 0.012, ls: 0.1, gakDmg: 9, gakReach: 30, gakStun: 24, mugDmg: 7, mugStun: 36, singT: 180, singSlow: 150, singRange: 220, singExc: 3, singDR: 0.25,
+    ruinRoot: 45, ruinT: 300, ruinNerf: 0.2, ruinCd: 2, ruinDef: 0.1, ruinLs: 0.1, yokWind: 36, yokBase: 17, yokPer: 2.5, yokStun: 90, yokRange: 150 },
   19: { hp: 290, dodgeP: 0.22, kbRed: 0.5, dhDmg: 18, dhStun: 45, pantsT: 240, pantsDmg: 4, pantsReach: 20, padT: 420, padAspd: 1.35, roarDmg: 24, roarStun: 120, roarRange: 170, roarAtk: 0.3, roarAtkT: 600 },
+  20: { hp: 220, hpMul: 1.0, boltDmg: 4, boltStun: 18, quakeDmg: 4, quakeFall: 4, quakeVy: 8.5, fireDmg: 5, burnT: 120, burnDps: 1, waterT: 180, waterSlow: 0.8, waterBoost: 1.15 },
   17: { hp: 200, barrierN: 3, barrierGap: 90, barrierOff: 300, tpCd: 5, pushCd: 10, pushDmg: 10, shotCd: 15, shotDmg: 20, shotSpd: 16, bombCd: 20, bombDmg: 50, bombSpd: 19, domCd: 30, domT: 1800, domDmg: 1, healCd: 60, lives: 2 },   // 히든 보스 (밸런스 대상 아님)
 };
 function skillDef(c, slot) { return CHARS[c]['s' + (slot + 1)] || null; }
@@ -522,12 +525,12 @@ const CHARS = [
   },
   {   // 18: 노짱
     name: '노짱', en: 'NOJJANG', color: '#f9a825', country: 'KR', stage: 'seoul',
-    desc: ['맞을수록 흥분하는 파이터', '각목·머그컵·노래·욕설'],
+    desc: ['맞을수록 흥분하는 파이터', '단단한 흡혈 탱커'],
     s1: { name: '각목들기', info: (b) => `각목을 들고 내려침: ${b.gakDmg} 피해 + 크게 밀어냄 (가드 시 70% 경감)` },
     s2: { name: '머그컵 던지기', info: (b) => `머그컵 투척, 맞으면 ${b.mugDmg} 피해 + ${(b.mugStun / 60).toFixed(1)}초 경직` },
-    s3: { name: '노래부르기', info: (b) => `${b.singT / 60}초간 열창! 근처 상대 ${b.singSlow / 60}초간 이속 -50%·공격 딜레이 증가 + 흥분 +${b.singExc}` },
-    s4: { name: '미친 욕쟁이', info: (b) => `${(b.yokWind / 60).toFixed(1)}초간 욕을 쏟아낸 뒤 앞의 상대에게 고정 ${b.yokBase} + 흥분 1당 ${b.yokPer} 피해, ${(b.yokStun / 60).toFixed(1)}초 기절 (흥분 소모, 맞으면 취소)` },
-    passive: { name: '마조히스트', desc: (b) => `받은 피해 ${b.excPer}마다 흥분 +1 (최대 ${b.excMax}): 흥분 1당 공격력 +${Math.round(b.excAtk * 100)}% / 받은 피해 ${Math.round(b.excHeal * 100)}% 즉시 회복` },
+    s3: { name: '노래부르기', info: (b) => `${b.singT / 60}초간 열창! 노래 중 받는 피해 -${Math.round(b.singDR * 100)}% / 근처 상대 ${b.singSlow / 60}초간 이속 -50%·공격 딜레이 증가 + 흥분 +${b.singExc}` },
+    s4: { name: '극우의 파멸일격', info: (b) => `검은 그림자를 소환! 상대 ${(b.ruinRoot / 60).toFixed(2)}초 구속 + ${b.ruinT / 60}초간 상대 모든 스킬 피해 -${Math.round(b.ruinNerf * 100)}% · 스킬 쿨타임 +${b.ruinCd}초 / 노짱은 ${b.ruinT / 60}초간 받는 피해 -${Math.round(b.ruinDef * 100)}% · 흡혈 +${Math.round(b.ruinLs * 100)}%` },
+    passive: { name: '마조히스트', desc: (b) => `받은 피해 ${b.excPer}마다 흥분 +1 (최대 ${b.excMax}): 흥분 1당 공격력 +${Math.round(b.excAtk * 100)}%·받는 피해 -${(b.excDR * 100).toFixed(1)}% / 입힌 피해 ${Math.round(b.ls * 100)}% 흡혈` },
     look: {
       H: 1.06, b: build({ torsoW: 15, waistW: 12.5, thigh: 6.4, shin: 5.4, arm: 5, fore: 4.5, headR: 8.6 }), skin: '#eec39a',
       hair: { style: 'shaved', color: '#3a3a3a' }, top: '#f9a825', topStyle: 'tee', pants: '#37474f', shoes: '#ececec', acc: { glasses: true },
@@ -546,10 +549,24 @@ const CHARS = [
       hair: { style: 'shaved', color: '#3a3a3a' }, top: '#78909c', topStyle: 'hoodie', pants: '#455a64', shoes: '#3e2723', acc: { glasses: true, roundFace: true, raccoonTail: true },
     },
   },
+  {   // 20: simdragon — 숨겨진 캐릭터 (CPU는 '어려움'에서만 등장, 플레이어는 선택 화면에서 M)
+    name: 'simdragon', en: 'SIMDRAGON', color: '#00bfa5', country: 'KR', stage: 'palace', hidden: true,
+    desc: ['사룡을 다루는 천룡인', '짧은 쿨타임 · 방해 효과 면역'],
+    s1: { name: '뇌룡', cd: 5, info: (b) => `하늘에서 번개! 상대 감전 ${b.boltDmg} 피해 + ${(b.boltStun / 60).toFixed(2)}초 경직` },
+    s2: { name: '지룡', cd: 10, info: (b) => `발밑에서 바위가 솟아 상대를 띄움 ${b.quakeDmg} 피해, 떨어질 때 ${b.quakeFall} 피해` },
+    s3: { name: '화룡', cd: 8, info: (b) => `전방으로 화염구 발사 ${b.fireDmg} 피해 + 화염 ${b.burnT / 60}초 (초당 ${b.burnDps})` },
+    s4: { name: '수룡', cd: 15, info: (b) => `${b.waterT / 60}초간 필드에 물을 깔아 상대 이동속도 -${Math.round((1 - b.waterSlow) * 100)}%, 자신 이동속도 +${Math.round((b.waterBoost - 1) * 100)}%` },
+    passive: { name: '천룡인', desc: (b) => `만난 상대 체력의 ${Math.round(b.hpMul * 100)}%를 체력으로 가짐 · 모든 방해 효과 면역` },
+    look: {
+      H: 1.08, b: build({ torsoW: 15.5, waistW: 12.5, thigh: 6.5, shin: 5.5, arm: 5.2, fore: 4.6 }), skin: '#eec39a',
+      hair: { style: 'short', color: '#141414' }, top: '#00897b', topStyle: 'robe', pants: '#004d40', shoes: '#1b1b1b', acc: { sash: '#ffd54f' },
+    },
+  },
 ];
 const SELECT_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 18, 19]; // 9+9 그리드 (Tirón은 K로)
 const SEL_COLS = 9;
-const TIRON = 11, HINCHAM = 12, YOUNGTAK = 13, GAEMI = 14, CHANI = 15, YUDONG = 16, BOSS = 17, NOJJANG = 18, GEOLLA = 19;
+const TIRON = 11, HINCHAM = 12, YOUNGTAK = 13, GAEMI = 14, CHANI = 15, YUDONG = 16, BOSS = 17, NOJJANG = 18, GEOLLA = 19, SIMDRAGON = 20;
+const SIMDRAGON_CPU_P = 0.2;   // '어려움' CPU 상대로 simdragon이 나올 확률
 
 
 // 승리 기록
@@ -574,7 +591,7 @@ const B_L = 1, B_R = 2, B_U = 4, B_D = 8, B_P = 16, B_K = 32, B_S1 = 64, B_S2 = 
 const B_SK = [B_S1, B_S2, B_S3, B_S4];
 const B_SK6 = [B_S1, B_S2, B_S3, B_S4, B_S5, B_S6];   // 흑요(플레이어): Q W E R T Y
 const BOSS_START_CD = [0, 4, 6, 9, 15, 60];   // 흑요 스킬 첫 쿨타임(초)
-const PROJ_TYPES = new Set(['GOLDSHOT', 'DARKSHOT', 'VACUUM', 'TOOTH', 'MOLACUT', 'BAMBOO', 'GEOKGI', 'POISON_BULLET', 'GAEGURA', 'NOTE', 'TOXIC_FART', 'CRYSTAL', 'SHUTTLE', 'MAKGEOLLI', 'SHINGLES', 'BALL', 'MUG']);
+const PROJ_TYPES = new Set(['GOLDSHOT', 'DARKSHOT', 'VACUUM', 'TOOTH', 'MOLACUT', 'BAMBOO', 'GEOKGI', 'POISON_BULLET', 'GAEGURA', 'NOTE', 'TOXIC_FART', 'CRYSTAL', 'SHUTTLE', 'MAKGEOLLI', 'SHINGLES', 'BALL', 'MUG', 'DRAGONFIRE']);
 const POISONISH = new Set(['BREATH', 'TOXIC_EXPLOSION', 'TOXIC_FART', 'POISON_BULLET']);
 const MELEE_T = new Set(['PUNCH', 'KICK']);
 const PHYS_T = new Set(['PUNCH', 'KICK', 'JUDO', 'HEADBUTT', 'RUSH', 'CHOKE', 'FLYING', 'GAK', 'DH', 'PANTS']);   // 흑요 결계가 막는 물리 공격
@@ -641,7 +658,8 @@ function makeFighter(side, c) {
     chokeT: 0, chokeN: 0, chokeTick: 0, chokeHold: false, kkT: 0, shutT: 0, stk: 0, yank: false, slim: false, clone: null, ddFree: false,
     shingT: 0, shingTick: 0, chestT: 0, ants: [], antG: [], antQ: 0, antT: 0, mallangT: 0, fifaT: 0, fifaNext: false, bomb: null,
     invulT: 0, tripT: 0, tripImm: 0, bph: 1, bcd: [0, 0, 0, 0, 0, 0], bOffT: 0, bCnt: 0, bLast: -999, bAtkCnt: 0, bAtkLast: -999, bPrev: null, domT: 0, lives: 0, ironT: 0, ironUsed: false, clockT: 0, phoneT: 0, phoneDmg: 0, phoneStart: 0, phoneHealT: 0, phoneHealAmt: 0,
-    exc: 0, excAcc: 0, gakT: 0, singT: 0, yokT: 0, dhT: 0, pantsT: 0,   // 노짱 · 걸라
+    exc: 0, excAcc: 0, gakT: 0, singT: 0, yokT: 0, dhT: 0, pantsT: 0, sumT: 0, sumX: 0,   // 노짱 · 걸라
+    burnT: 0, burnTick: 0, quakeFall: 0, boltT: 0, boltX: 0, rockT: 0, rockX: 0, waterT: 0,   // simdragon
     ko: false, wins: 0, combo_recv: 0, comboShowT: 0,
   };
 }
@@ -686,6 +704,12 @@ function resetRound(G) {
     if (c === HINCHAM) { if (O.c === 4) F.pm *= 1 + BAL[12].otaku; if (G.stage === 'tokyo') F.pm *= 1 + BAL[12].otaku; }
     if (c === YOUNGTAK && G.late && G.late[side]) F.pm *= 1 + BAL[13].late;
     if (c === CHANI && O.c === 4) F.pm *= 1 + BAL[15].eun;
+    // simdragon 천룡인: 만난 상대 체력의 150%
+    if (c === SIMDRAGON) {
+      const oh = O.c === SIMDRAGON ? BAL[20].hp : BAL[O.c].hp;
+      F.maxHp = F.hp = Math.round(oh * BAL[20].hpMul);
+      if (G.round === 1) F.cd = [0, 1, 2, 3].map((i) => Math.min(SLOT_CD_START[i], CHARS[c]['s' + (i + 1)].cd) * SEC);
+    }
     F.x = ARENA_W / 2 + (side === 0 ? -80 : 80);
     F.f = side === 0 ? 1 : -1;
   }
@@ -707,6 +731,7 @@ function momTake(G, F, dmg, label) {
 function disrupt(G, T) {
   if (T.earT > 0) { ev(G, 'float', T.x, T.y + 92, '무시!', '#c38bff'); return true; }   // 창가오 거꾸로 쓴 귀마개
   if (T.invulT > 0) { ev(G, 'float', T.x, T.y + 92, '무적!', '#fff6a0'); return true; }
+  if (T.c === SIMDRAGON) { ev(G, 'float', T.x, T.y + 92, '천룡인: 면역!', '#64ffda'); return true; }   // 모든 방해 효과 면역
   if (!momAlive(T)) return false;
   momTake(G, T, 0, '방해 무효!');
   return true;
@@ -800,6 +825,12 @@ function applyDamage(G, A, D, dmg, type, o) {
     if (D.spikeT > 0) dmg *= 1 - BAL[12].spikeDR;                // 힌참휴 뾰족한 머리 (받는 피해 10% 감소)
   }
   if (D.chestT > 0 && !o.pure && !o.reflect) dmg *= 1 - BAL[14].chestDR;   // 허도개미 옵빠이
+  // 극우의 파멸일격: 너프당한 쪽의 스킬 피해 감소
+  if (A && A !== D && !MELEE_T.has(type) && !o.reflect) dmg *= stat(A, 'sk');
+  if (D.c === NOJJANG && A && A !== D && !o.pure && !o.reflect) {   // 노짱: 흥분할수록 단단해짐 + 노래 중 피해 감소
+    if (D.exc > 0) dmg *= 1 - D.exc * BAL[18].excDR;
+    if (D.singT > 0) dmg *= 1 - BAL[18].singDR;
+  }
   // 차니팍 피파ㅈ밥: 다음 공격 1개는 2배로 받음
   if (D.fifaNext && A && A !== D && dmg > 0 && !o.reflect) { dmg *= BAL[15].fifaMul; D.fifaNext = false; ev(G, 'float', D.x, hy + 40, 'x2 아야!', '#ff7b7b'); }
   // 은맘이 피해와 방해효과를 모두 대신 받음
@@ -813,6 +844,7 @@ function applyDamage(G, A, D, dmg, type, o) {
     if (!o.silent) ev(G, 'float', D.x + rnd() * 10 - 5, hy + 22, (Math.round(dmg * 10) / 10).toString(), blocked ? '#bbbbbb' : (o.fixed ? '#ff5edb' : '#ffe14d'));
     if (A !== D && A.stimT > 0 && canHeal(A)) { addHp(A, dmg * BAL[0].stimLS); ev(G, 'heal', A.x, A.y + 50); }
     if (A !== D && A.fifaT > 0 && canHeal(A)) addHp(A, dmg * BAL[15].fifaLS);
+    if (A !== D && A.c === NOJJANG && canHeal(A)) { addHp(A, dmg * (BAL[18].ls + (A.mods.some((m) => m.id === 'ruin_def') ? BAL[18].ruinLs : 0))); if (dmg >= 5) ev(G, 'heal', A.x, A.y + 50); }   // 노짱 흡혈
     if (D.c === NOJJANG && A !== D) nojExcite(G, D, dmg);
     if (A.c === 3 && A !== D) { const red = Math.round(BAL[3].cdRed * SEC); A.cd = A.cd.map((v) => Math.max(0, v - red)); }
   }
@@ -839,7 +871,7 @@ function checkKO(G, D) {
 // 노짱 마조히스트: 맞을수록 흥분 (공격력↑) + 받은 피해 일부 회복
 function nojExcite(G, D, dmg) {
   const B = BAL[18];
-  if (canHeal(D) && D.hp > 0) addHp(D, dmg * B.excHeal);
+  if (B.excHeal && canHeal(D) && D.hp > 0) addHp(D, dmg * B.excHeal);
   D.excAcc += dmg;
   let up = 0;
   while (D.excAcc >= B.excPer) { D.excAcc -= B.excPer; if (D.exc < B.excMax) { D.exc++; up++; } }
@@ -940,6 +972,11 @@ const PROJ_HIT = {
   mug(G, A, T, p) {   // 노짱 머그컵
     const res = applyDamage(G, A, T, BAL[18].mugDmg, 'MUG');
     if (res === 'hit') { T.hitT = Math.max(T.hitT, BAL[18].mugStun); T.kb = sign(p.vx) * 3; ev(G, 'float', T.x, T.y + 96, '쨍그랑!', '#ffffff'); ev(G, 'shake', 6, 3); }
+  },
+  dragonfire(G, A, T, p) {   // simdragon 화룡
+    const res = applyDamage(G, A, T, BAL[20].fireDmg, 'DRAGONFIRE');
+    if (res === 'hit' || res === 'block') { if (!disrupt(G, T)) { T.burnT = BAL[20].burnT; T.burnTick = 0; ev(G, 'float', T.x, T.y + 96, '화염!', '#ff7043'); } }
+    if (res === 'hit') { T.hitT = Math.max(T.hitT, 14); T.kb = sign(p.vx) * 3; }
   },
   fart(G, A, T, p) {
     const res = applyDamage(G, A, T, (ATK.pBase + ATK.pStep) * A.mul * BAL[10].fartMul, 'TOXIC_FART');
@@ -1384,7 +1421,21 @@ const SK = {
       note(G, '🎤 노짱 열창!! ♪♬', '#f9a825', 90); ev(G, 'sfx', 'note1');
       return true;
     },
-    (G, F, O) => { if (F.y > 0) return false; F.yokT = BAL[18].yokWind; note(G, '🤬 미친 욕쟁이 발동!!', '#ff5252', 90); ev(G, 'sfx', 'roar'); return true; },
+    (G, F, O) => {   // 극우의 파멸일격: 검은 그림자 소환 → 상대 구속 + 스킬 너프, 노짱 버프
+      const B = BAL[18];
+      F.sumT = 90; F.sumX = clamp(O.x - O.f * 34, 20, ARENA_W - 20);
+      addMod(F, 'ruin_def', 'def', 1 / (1 - B.ruinDef), B.ruinT);
+      if (!O.ko && !disrupt(G, O)) {
+        O.rootT = Math.max(O.rootT, B.ruinRoot);
+        addMod(O, 'ruin', 'sk', 1 - B.ruinNerf, B.ruinT);
+        O.cd = O.cd.map((v, i) => (skillDef(O.c, i) ? v + B.ruinCd * SEC : v));
+        if (O.c === BOSS) O.bcd = O.bcd.map((v) => v + B.ruinCd * SEC);
+        ev(G, 'float', O.x, O.y + 110, '구속 + 스킬 너프!', '#b39ddb');
+      }
+      note(G, '☠ 극우의 파멸일격!! 검은 그림자가 나타났다', '#b39ddb', 120);
+      ev(G, 'sfx', 'roar'); ev(G, 'shake', 16, 7); G.flash = 10; ev(G, 'aura', F.side, 'force');
+      return true;
+    },
   ],
   19: [   // 걸라
     (G, F, O) => { if (F.y > 0) return false; F.dhT = 16; ev(G, 'sfx', 'charge'); return true; },
@@ -1416,6 +1467,29 @@ const SK = {
       }
       return true;
     },
+  ],
+  20: [   // simdragon
+    (G, F, O) => {   // 뇌룡: 하늘에서 번개
+      if (O.ko) return false;
+      const B = BAL[20];
+      F.boltT = 14; F.boltX = O.x; G.flash = 8; ev(G, 'shake', 10, 5); ev(G, 'sfx', 'explosion');
+      const res = applyDamage(G, F, O, B.boltDmg, 'BOLT');
+      if ((res === 'hit' || res === 'block' || res === 'mom') && !disrupt(G, O)) { O.stunT = Math.max(O.stunT, B.boltStun); O.atk = null; ev(G, 'float', O.x, O.y + 110, '감전!', '#ffee58'); }
+      return true;
+    },
+    (G, F, O) => {   // 지룡: 바위가 솟아 띄웠다가 떨어뜨림
+      if (O.ko) return false;
+      const B = BAL[20];
+      F.rockT = 30; F.rockX = O.x; ev(G, 'shake', 12, 6); ev(G, 'sfx', 'hitK');
+      const res = applyDamage(G, F, O, B.quakeDmg, 'QUAKE');
+      if ((res === 'hit' || res === 'block' || res === 'mom') && !disrupt(G, O)) {
+        O.y = Math.max(O.y, 1); O.vy = B.quakeVy; O.vx = 0; O.atk = null; O.hitT = Math.max(O.hitT, Math.round(2 * B.quakeVy / 0.36) + 6); O.quakeFall = B.quakeFall;
+        ev(G, 'float', O.x, O.y + 110, '지룡!', '#a1887f');
+      }
+      return true;
+    },
+    (G, F, O) => { spawnProj(G, F, 'dragonfire', 8, 45, 11); ev(G, 'sfx', 'explosion'); return true; },
+    (G, F, O) => { F.waterT = BAL[20].waterT; note(G, '🌊 수룡! 필드가 물에 잠긴다', '#4fc3f7', 100); ev(G, 'sfx', 'whoosh'); return true; },
   ],
 
 };
@@ -1749,6 +1823,8 @@ function stepSkillStates(G, F, O, inp) {
       } else ev(G, 'sfx', 'miss');
     }
   }
+  if (F.sumT > 0) F.sumT--;   // 극우의 파멸일격 소환 연출
+  if (F.boltT > 0) F.boltT--; if (F.rockT > 0) F.rockT--; if (F.waterT > 0) F.waterT--;   // simdragon 연출/지속
   // 노짱 노래부르기 (연출)
   if (F.singT > 0) { F.singT--; if (F.singT % 20 === 0) ev(G, 'float', F.x + F.f * 10 + (rnd() - 0.5) * 30, F.y + 110 + rnd() * 20, rnd() < 0.5 ? '♪' : '♬', ['#ffe14d', '#ff66b3', '#3df0ff'][F.singT % 3]); }
   // 노짱 미친 욕쟁이: 욕을 쏟아낸 뒤 터뜨림 (맞으면 취소)
@@ -1887,6 +1963,23 @@ function stepFighter(G, F, O, inp) {
       checkKO(G, F);
     }
   }
+  // simdragon 화룡 화염 (지속 피해)
+  if (F.burnT > 0) {
+    F.burnT--;
+    if (++F.burnTick >= 60) {
+      F.burnTick = 0;
+      const bd = BAL[20].burnDps;
+      if (momAlive(F)) momTake(G, F, bd); else F.hp -= bd;
+      ev(G, 'float', F.x, F.y + 80 * H, String(bd), '#ff7043');
+      checkKO(G, F);
+    }
+  }
+  // simdragon 천룡인: 모든 방해 효과 면역 (어떤 경로로 걸려도 즉시 해제)
+  if (F.c === SIMDRAGON) {
+    for (const k of ['stunT', 'rootT', 'slowT', 'delayT', 'poisT', 'hbT', 'ttaT', 'guardOffT', 'drunkT', 'chokeT', 'shingT', 'tripT', 'pantsT', 'burnT']) F[k] = 0;
+    F.seal = [0, 0, 0, 0]; F.quakeFall = 0;
+    if (F.mods.some((m) => m.v < 1 && m.k !== 'size')) F.mods = F.mods.filter((m) => !(m.v < 1 && m.k !== 'size'));
+  }
   // mola008X 패시브: 8초마다 체력 10 회복
   if (F.c === 1) { F.regenT++; if (F.regenT >= BAL[1].regenSec * SEC) { F.regenT = 0; if (F.hp < F.maxHp) heal(G, F, BAL[1].regen); } }
   // 매미킴 패시브: 시한폭탄
@@ -1927,6 +2020,8 @@ function stepFighter(G, F, O, inp) {
   if (F.board) speed *= BAL[8].boardSpd;
   if (F.slowT > 0) speed *= 0.5;
   if (F.pantsT > 0) speed *= 0.5;   // 걸라 바지내리기
+  if (O.waterT > 0 && F.c !== SIMDRAGON) speed *= BAL[20].waterSlow;   // simdragon 수룡
+  if (F.waterT > 0) speed *= BAL[20].waterBoost;
   speed *= stat(F, 'spd');
   if (F.invisT > 0) speed *= BAL[2].invisSpd;
   const dir = (h & B_R ? 1 : 0) - (h & B_L ? 1 : 0);
@@ -1978,7 +2073,10 @@ function stepFighter(G, F, O, inp) {
     F.vy -= 0.36;
     F.y += F.vy;
     if (canMove || F.vy > 0) F.x += F.vx;
-    if (F.y <= 0) { F.y = 0; F.vy = 0; F.vx = 0; F.djUsed = false; ev(G, 'land', F.side); }
+    if (F.y <= 0) {
+      F.y = 0; F.vy = 0; F.vx = 0; F.djUsed = false; ev(G, 'land', F.side);
+      if (F.quakeFall) { const d = F.quakeFall; F.quakeFall = 0; const r = applyDamage(G, O, F, d, 'QUAKE'); if (r === 'hit') { ev(G, 'shake', 10, 5); ev(G, 'spark', F.x, 6, 'big'); ev(G, 'sfx', 'hitK'); } }   // 지룡: 떨어질 때 피해
+    }
   } else {
     F.x += F.vx;
   }
@@ -2140,7 +2238,7 @@ function endCheck(G) {
     F.atk = null; F.guard = false; F.dashT = 0; F.headT = 0;
     for (const k of ['hitFlash', 'stimT', 'meokT', 'manT', 'jeongA', 'jeongP', 'parryT', 'rootT', 'guardOffT', 'slowT', 'poisT', 'hitT', 'blockT', 'castT', 'spikeT', 'angerT', 'rushN', 'noteN', 'momHp', 'momT', 'curseT',
       'stunT', 'hbT', 'ttaT', 'invisT', 'drunkT', 'earT', 'rageT', 'kcT', 'laughT', 'breathN', 'fireT', 'flyT', 'rushT2', 'chokeT', 'kkT', 'shutT',
-      'shingT', 'chestT', 'antQ', 'mallangT', 'fifaT', 'invulT', 'ironT', 'clockT', 'phoneT', 'phoneHealT', 'tripT', 'tripImm', 'domT', 'bOffT', 'gakT', 'singT', 'yokT', 'dhT', 'pantsT']) F[k] = 0;
+      'shingT', 'chestT', 'antQ', 'mallangT', 'fifaT', 'invulT', 'ironT', 'clockT', 'phoneT', 'phoneHealT', 'tripT', 'tripImm', 'domT', 'bOffT', 'gakT', 'singT', 'yokT', 'dhT', 'pantsT', 'sumT', 'burnT', 'quakeFall', 'boltT', 'rockT', 'waterT']) F[k] = 0;
     F.chokeHold = false; F.clone = null; F.ants = []; F.antG = []; F.bomb = null; F.fifaNext = false; F.mods = F.mods.filter((m) => m.id === 'belly'); F.sz = 1;
     if (F.ko) { F.vy = 4; F.vx = -F.f * 2.2; F.y = Math.max(F.y, 0.1); }
   }
@@ -2187,7 +2285,8 @@ const AI_SKILL = {
     (F, O, d) => d > 50 && d < 240 && O.shingT <= 0, (F, O, d) => d < 170, (F, O, d) => true],
   15: [(F, O, d) => d < 140, (F, O, d) => d > 60 && d < 260, (F, O, d) => d < 200, (F, O, d) => d < 260],
   16: [(F, O, d) => d < 150, (F, O, d) => d < 120, (F, O, d) => d < 140, (F, O, d) => F.hp < F.maxHp * 0.45],
-  18: [(F, O, d) => close(F, O, 26) && O.y < 20, (F, O, d) => d > 60 && d < 240, (F, O, d) => d < 200, (F, O, d) => close(F, O, 120) && (F.exc >= 5 || helpless(O))],
+  18: [(F, O, d) => close(F, O, 26) && O.y < 20, (F, O, d) => d > 60 && d < 240, (F, O, d) => d < 200, (F, O, d) => d < 220 && O.invulT <= 0 && O.earT <= 0 && !O.ko],
+  20: [(F, O, d) => !O.ko && O.invulT <= 0, (F, O, d) => !O.ko && O.y < 20, (F, O, d) => d > 40 && d < 300, (F, O, d) => d < 320],
   19: [(F, O, d) => d > 20 && d < 120 && O.y < 20, (F, O, d) => close(F, O, 16) && O.y < 10 && O.pantsT <= 0, (F, O, d) => F.cd[0] > 120 && F.cd[1] > 120, (F, O, d) => d < 150],
 };
 const MASH = [3, 5, 7, 9, 11, 14, 20];          // AI 연타 속도 (초당)
@@ -4495,6 +4594,30 @@ function drawFighterInGame(b, F, G, t) {
 // 지속형 스킬 연출 (불, 입냄새, 웃음, KC, 초크 게이지)
 function drawSkillFX(b, F, G, t, sx, sy) {
   const H = lookOf(F).H * (F.sz || 1), my = sy - 74 * H * FSCALE, mx = sx + F.f * 16 * H;
+  if (F.waterT > 0) {   // simdragon 수룡: 바닥 물
+    const a = Math.min(1, F.waterT / 30);
+    b.fillStyle = `rgba(64,164,255,${0.32 * a})`; b.fillRect(0, GROUND - 6, VW, 10);
+    b.fillStyle = `rgba(200,235,255,${0.5 * a})`; for (let i = 0; i < 12; i++) { const x = ((i * 47 + t * 1.3) % (VW + 20)) - 10; b.fillRect(x, GROUND - 4 + (i % 3), 10, 1); }
+  }
+  if (F.boltT > 0) {   // simdragon 뇌룡: 번개
+    const [bx, by] = worldToScreen(F.boltX, 0);
+    b.strokeStyle = (t >> 1) % 2 ? '#fffde7' : '#ffee58'; b.lineWidth = 3; b.beginPath(); b.moveTo(bx + 10, 0);
+    for (let y = 0, x = bx + 10, i = 0; y < by - 10; i++) { y += 22; x = bx + (i % 2 ? 9 : -9); b.lineTo(x, Math.min(y, by - 10)); }
+    b.stroke(); b.fillStyle = 'rgba(255,238,88,0.35)'; b.beginPath(); b.ellipse(bx, by - 4, 24, 6, 0, 0, Math.PI * 2); b.fill();
+  }
+  if (F.rockT > 0) {   // simdragon 지룡: 솟는 바위
+    const [rx, ry] = worldToScreen(F.rockX, 0), h = Math.sin(Math.min(1, (30 - F.rockT) / 8) * Math.PI / 2) * 42 * Math.min(1, F.rockT / 10);
+    poly(b, [[rx - 16, ry], [rx - 10, ry - h * 0.8], [rx - 2, ry - h], [rx + 8, ry - h * 0.85], [rx + 16, ry]], '#8d6e63');
+    b.fillStyle = '#6d4c41'; b.fillRect(rx - 6, ry - h * 0.6, 3, 2); b.fillRect(rx + 4, ry - h * 0.4, 3, 2);
+  }
+  if (F.sumT > 0 && G) {   // 노짱 극우의 파멸일격: 검은 그림자 (실존 인물 아님)
+    const O = G.F[1 - F.side], [gx, gy] = worldToScreen(F.sumX, 0), a = Math.min(1, F.sumT / 20, (90 - F.sumT) / 10 + 0.2);
+    b.save(); b.globalAlpha = a * 0.85;
+    b.fillStyle = 'rgba(90,40,140,0.35)'; b.beginPath(); b.ellipse(gx, gy - 70, 34, 80, 0, 0, Math.PI * 2); b.fill();
+    b.translate(gx, gy); b.scale((O.x > F.sumX ? 1 : -1) * FSCALE * 1.15, FSCALE * 1.15);
+    drawCharacter(b, F.c, P({ lean: 0.1, fa: [1.7, 0.2], ba: [0.6, 1.9], hand: 'open', mouth: 'shout' }), t, { look: SHADOW_LOOK });
+    b.restore();
+  }
   if (F.fireT > 0) {
     for (let i = 0; i < 4; i++) FX.parts.push({ k: 'flame', x: F.x + F.f * (18 + Math.random() * 10), y: F.y + 74 * H, vx: F.f * (3 + Math.random() * 2.5), vy: (Math.random() - 0.4) * 0.8, life: 16 + Math.random() * 10, c: ['#ff3d00', '#ffab00', '#ffe14d', '#ff6d00'][i], r: 3 + Math.random() * 3 });
   }
@@ -4592,6 +4715,7 @@ function silhouette(col) {
   return c;
 }
 
+const SHADOW_LOOK = { H: 1.2, b: build({ torsoW: 16, waistW: 13 }), skin: '#2a2238', hair: { style: 'slick', color: '#0d0a14' }, top: '#1a1424', topStyle: 'coat', pants: '#140f1c', shoes: '#000', acc: {} };
 function drawProjectile(b, p, t, G) {
   const [sx, sy] = worldToScreen(p.x, p.y);
   const d = sign(p.vx);
@@ -4707,6 +4831,10 @@ function drawProjectile(b, p, t, G) {
       b.strokeStyle = '#fafafa'; b.lineWidth = 2; b.beginPath(); b.arc(6.5, 0, 3, -1.3, 1.3); b.stroke();
       b.fillStyle = '#f9a825'; b.fillRect(-5, -1, 10, 3);
       b.fillStyle = '#6d4c41'; b.fillRect(-5, -6, 10, 1.5);
+      break;
+    case 'dragonfire':   // simdragon 화룡
+      for (let i = 4; i >= 0; i--) { b.fillStyle = ['#ffeb3b', '#ffb300', '#ff7043', '#e64a19', '#bf360c'][i]; b.globalAlpha = 1 - i * 0.15; b.beginPath(); b.arc(-d * i * 5, Math.sin(t * 0.5 + i) * 1.5, 9 - i * 1.4, 0, Math.PI * 2); b.fill(); }
+      b.globalAlpha = 1; b.fillStyle = '#fffde7'; b.beginPath(); b.arc(d * 2, 0, 3.5, 0, Math.PI * 2); b.fill();
       break;
     case 'fart':
       for (let i = 0; i < 5; i++) {
@@ -4922,6 +5050,9 @@ function drawStatus(ctx, F, s, t) {
   if (F.c === TIRON) tags.push(['고통 ' + F.pain + '/' + BAL[11].painMax, '#ff9f43']);
   if (F.tripT > 0) tags.push(['넘어짐', '#f5c542']);
   if (F.c === NOJJANG) tags.push(['흥분 ' + F.exc + '/' + BAL[18].excMax, '#ff7ab8']);
+  if (F.burnT > 0) tags.push(['화염 ' + Math.ceil(F.burnT / SEC) + 's', '#ff7043']);
+  if (F.waterT > 0) tags.push(['수룡 ' + Math.ceil(F.waterT / SEC) + 's', '#4fc3f7']);
+  if (F.c === SIMDRAGON) tags.push(['천룡인 · 방해 면역', '#64ffda']);
   if (F.pantsT > 0) tags.push(['바지 내려감 ' + Math.ceil(F.pantsT / SEC) + 's', '#ffb3c6']);
   if (F.c === BOSS) tags.push(F.bOffT > 0 ? ['결계 해제 ' + Math.ceil(F.bOffT / SEC) + 's', '#7fd4ff'] : ['절대 결계 ' + F.bCnt + '/' + BAL[17].barrierN, '#7fd4ff']);
   if (F.c === BOSS) tags.push([F.bph === 2 ? '2페이즈' : '1페이즈', '#c9a227']);
@@ -4951,8 +5082,8 @@ function drawStatus(ctx, F, s, t) {
   if (F.clockT > 0) tags.push(['4시 55분', '#fff59d']);
   if (F.c === 4 && F.ddFree) tags.push(['피망 더블다운 1회 더', '#ffb36b']);
   for (const m of F.mods) {
-    const lab = { mantis: '맨티스컷', focus: '공속↑', debuff: '능력치-20%', debuff_c: '능력치-20%', rage: '반장의 분노', curse_spd: '이속↑', curse_rng: '사거리↑', pen: '벌점', pen_c: '벌점', leg1: '다리 회복', grow1: '거대화', form: '폼 미쳤다', burp: '트름 공격↑', fifa: '공격 +10%' }[m.id];
-    if (lab) tags.push([lab + (m.t < 1e8 ? ' ' + Math.ceil(m.t / SEC) + 's' : ''), m.id === 'debuff' || m.id === 'pen' ? '#9f8fff' : '#ffb347']);
+    const lab = { mantis: '맨티스컷', focus: '공속↑', debuff: '능력치-20%', debuff_c: '능력치-20%', rage: '반장의 분노', curse_spd: '이속↑', curse_rng: '사거리↑', pen: '벌점', pen_c: '벌점', leg1: '다리 회복', grow1: '거대화', form: '폼 미쳤다', burp: '트름 공격↑', fifa: '공격 +10%', ruin: '스킬 너프', ruin_c: '스킬 너프', ruin_def: '파멸 버프' }[m.id];
+    if (lab) tags.push([lab + (m.t < 1e8 ? ' ' + Math.ceil(m.t / SEC) + 's' : ''), m.id === 'debuff' || m.id === 'pen' || m.id === 'ruin' ? '#9f8fff' : '#ffb347']);
   }
   if ((F.pm || 1) > 1.001) tags.push(['패시브 +' + Math.round((F.pm - 1) * 100) + '%', '#ffb3e6']);
   let x = s === 0 ? 30 : 450;
@@ -6398,6 +6529,7 @@ const WIN_QUOTES = {
   17: '봉인을 풀게 만든 건 네가 처음이다.',
   18: '더 때려봐... 흥분되잖아.',
   19: '너굴너굴~ 바지 단속 잘 하라고.',
+  20: '사룡이 깨어났다. 천룡인의 승리다.',
 };
 
 const APP = {
@@ -6444,7 +6576,8 @@ function sendSel() { netSend({ t: 'sel', cur: APP.sel.cur, ready: APP.sel.ready,
 // 선택 화면 칸: 흑요를 얻으면 맨 뒤에 흑요 칸이 추가됨 (SEL_ALL 순서는 모든 기기에서 같음)
 const SEL_ALL = [...SELECT_ORDER, BOSS];
 function selOrder() { return typeof heugyoUnlocked === 'function' && heugyoUnlocked() ? SEL_ALL : SELECT_ORDER; }
-function myChar() { return APP.sel.hidden ? TIRON : (selOrder()[APP.sel.cur] ?? SELECT_ORDER[0]); }
+function myChar() { return APP.sel.hidden ? (APP.sel.hiddenC ?? TIRON) : (selOrder()[APP.sel.cur] ?? SELECT_ORDER[0]); }
+const specialCpu = (c) => c === BOSS || c === SIMDRAGON;   // 그리드 밖에서 나오는 CPU 상대
 
 function maybeStartOnline() {
   if (NET.role !== 'host' || APP.state !== 'select') return;
@@ -6484,7 +6617,7 @@ function startFight() {
 function tick() {
   APP.t++; APP.st++;
   if (APP.toastT > 0) APP.toastT--;
-  if (IN.take('MUTE')) { AUD.setMusic(!AUD.musicOn); saveSettings(); toast(AUD.musicOn ? 'BGM 켜짐' : 'BGM 꺼짐'); }
+  if (APP.state !== 'select' && IN.take('MUTE')) { AUD.setMusic(!AUD.musicOn); saveSettings(); toast(AUD.musicOn ? 'BGM 켜짐' : 'BGM 꺼짐'); }
   switch (APP.state) {
     case 'title': updTitle(); break;
     case 'select': updSelect(); break;
@@ -6532,7 +6665,7 @@ function updSelect() {
   if (S.roulette > 0) {
     S.roulette--;
     if (S.roulette % 4 === 0) { S.opp.cur = Math.floor(Math.random() * SELECT_ORDER.length); playSfx('cursor'); }
-    if (S.roulette === 0) { S.opp.cur = SELECT_ORDER.indexOf(S.cpuC); playSfx('confirm'); APP._vsDelay = 30; }
+    if (S.roulette === 0) { S.opp.cur = Math.max(0, SELECT_ORDER.indexOf(S.cpuC)); playSfx('confirm'); APP._vsDelay = 30; if (S.cpuC === SIMDRAGON) { playSfx('roar'); toast('숨겨진 상대 simdragon 등장!'); } }
     return;
   }
   if (APP._vsDelay > 0) { if (--APP._vsDelay === 0) startVS(myChar(), S.cpuC, CHARS[S.cpuC].stage, (Math.random() * 1e9) | 0, [false, true]); return; }
@@ -6548,7 +6681,8 @@ function updSelect() {
   if (IN.take('R')) { S.cur = (S.cur + 1) % N; moved = true; }
   if (IN.take('U') || IN.take('D')) { S.cur = S.cur < SEL_COLS ? Math.min(N - 1, S.cur + SEL_COLS) : S.cur - SEL_COLS; moved = true; }
   if (moved) { S.hidden = false; playSfx('cursor'); if (APP.mode === 'online') sendSel(); }
-  const hid = IN.take('HID') || IN.take('S3');   // 모바일: E 버튼 = Tirón
+  const dragon = IN.take('MUTE');   // 선택 화면의 M = 숨겨진 simdragon
+  const hid = dragon || IN.take('HID') || IN.take('S3');   // 모바일: E 버튼 = Tirón
   // LUNATIC + CPU 대전: B (모바일은 R 버튼)를 누르면 히든 보스전
   const bossKey = IN.take('BOSS') || IN.take('S4');
   const boss = bossKey && APP.mode === 'cpu' && APP.diff === 5;
@@ -6557,17 +6691,18 @@ function updSelect() {
     S.cpuC = BOSS; APP._vsDelay = 45; playSfx('roar'); return;
   }
   if (hid || IN.take('START') || IN.take('S1') || IN.take('P')) {
-    S.hidden = hid;
+    S.hidden = hid; S.hiddenC = dragon ? SIMDRAGON : TIRON;
     S.ready = true; S.readyAt = performance.now(); playSfx('confirm');
     announce(CHARS[myChar()].en.toLowerCase());
     if (APP.mode === 'cpu') {
       S.cpuC = SELECT_ORDER[Math.floor(Math.random() * SELECT_ORDER.length)];
+      if (APP.diff === 3 && Math.random() < SIMDRAGON_CPU_P) S.cpuC = SIMDRAGON;   // simdragon: '어려움'에서만 CPU로 등장
       S.roulette = 50;
     } else { sendSel(); maybeStartOnline(); }
   }
 }
 
-function dictOrder() { return heugyoUnlocked() ? [...SELECT_ORDER, TIRON, BOSS] : [...SELECT_ORDER, TIRON]; }
+function dictOrder() { return heugyoUnlocked() ? [...SELECT_ORDER, TIRON, SIMDRAGON, BOSS] : [...SELECT_ORDER, TIRON, SIMDRAGON]; }
 function updDict() {
   const order = dictOrder();
   let i = Math.max(0, order.indexOf(APP.dict));   // 목록에 없는 캐릭터면 첫 번째로
@@ -6721,7 +6856,7 @@ function rSelectBuf(t) {
   selBg(t);
   const S = APP.sel;
   const leftC = APP.mySide === 0 ? myChar() : (S.opp.c !== null ? S.opp.c : SEL_ALL[S.opp.cur]);
-  const rightC = APP.mySide === 0 ? (APP.mode === 'cpu' ? (S.cpuC === BOSS ? BOSS : S.roulette > 0 || S.cpuC !== null ? SELECT_ORDER[S.opp.cur] : null) : (S.opp.c !== null ? S.opp.c : SEL_ALL[S.opp.cur])) : myChar();
+  const rightC = APP.mySide === 0 ? (APP.mode === 'cpu' ? (specialCpu(S.cpuC) && S.roulette === 0 ? S.cpuC : S.roulette > 0 || S.cpuC !== null ? SELECT_ORDER[S.opp.cur] : null) : (S.opp.c !== null ? S.opp.c : SEL_ALL[S.opp.cur])) : myChar();
   for (const [c, x, f, ready] of [[leftC, 78, 1, APP.mySide === 0 ? S.ready : S.opp.ready], [rightC, 402, -1, APP.mySide === 1 ? S.ready : S.opp.ready]]) {
     bctx.fillStyle = 'rgba(0,0,0,0.35)'; bctx.beginPath(); bctx.ellipse(x, 176, 40, 6, 0, 0, Math.PI * 2); bctx.fill();
     if (c === null || c === undefined) {
@@ -6752,7 +6887,7 @@ function rSelectHUD(t) {
   const cursors = [];
   cursors.push({ side: APP.mySide, cur: S.cur, ready: S.ready, hidden: S.hidden });
   if (APP.mode === 'online') cursors.push({ side: 1 - APP.mySide, cur: S.opp.cur, ready: S.opp.ready });
-  else if ((S.roulette > 0 || S.cpuC !== null) && S.cpuC !== BOSS) cursors.push({ side: 1, cur: S.opp.cur, ready: S.roulette === 0, cpu: true });
+  else if ((S.roulette > 0 || S.cpuC !== null) && !(specialCpu(S.cpuC) && S.roulette === 0)) cursors.push({ side: 1, cur: S.opp.cur, ready: S.roulette === 0, cpu: true });
   for (const c of cursors) {
     const T = tiles[c.cur]; if (!T) continue;
     const col = c.side === 0 ? '#ff3b3b' : '#3b9bff';
@@ -6767,7 +6902,7 @@ function rSelectHUD(t) {
   const showC = (side) => {
     if (side === APP.mySide) return myChar();
     if (APP.mode === 'online') return S2.opp.c !== null ? S2.opp.c : SEL_ALL[S2.opp.cur];
-    if (S2.cpuC === BOSS) return BOSS;
+    if (specialCpu(S2.cpuC) && S2.roulette === 0) return S2.cpuC;
     return S2.roulette > 0 || S2.cpuC !== null ? SELECT_ORDER[S2.opp.cur] : null;
   };
   for (const side of [0, 1]) {
